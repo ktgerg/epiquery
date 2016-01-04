@@ -162,6 +162,7 @@ class MdxTransform
         if (typeof map[fqName]) is "undefined"
           node = {};
           node.caption = MdxTransform.prototype.replaceAll('&amp;','&',member.Caption);
+          node.vegaId = vid;
           MdxTransform.prototype.addExtraPropertiesFromMemberToObject(member, node);
 
           if(parent)
@@ -220,14 +221,10 @@ class MdxTransform
   addExtraPropertiesFromMemberToObject: (member, obj) =>
     Object.keys(member).forEach (key) ->
       val = member[key];
-      if (/^_x005B_/.test(key)) 
-        key = MdxTransform.prototype.replaceAll('_x005B_','',key);
-        key = MdxTransform.prototype.replaceAll('_x005D_','',key);
-        key = MdxTransform.prototype.replaceAll(' ','',key);
-        key = key.split('.').pop();
-        re = /\w*VegaId\b/gi
-        key = re.test(key) ? 'vegaId' : MdxTransform.prototype.replaceAll(' ', '',key);                         
-        obj[key] = val;
+      key = MdxTransform.prototype.replaceAll('_x005B_','',key);
+      key = MdxTransform.prototype.replaceAll('_x005D_','',key);
+      key = MdxTransform.prototype.replaceAll(' ','',key);                       
+      obj[key] = val;
 
 
 module.exports.MdxTransform = MdxTransform
