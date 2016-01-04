@@ -163,7 +163,6 @@ class MdxTransform
           node = {};
           node.caption = MdxTransform.prototype.replaceAll('&amp;','&',member.Caption);
           node.vegaId = vid;
-          MdxTransform.prototype.addExtraPropertiesFromMemberToObject(member, node);
 
           if(parent)
             if(!parent.children)
@@ -216,15 +215,6 @@ class MdxTransform
         return true 
     
     return false
-
-  #replace brackets &#x005B; and &#x005D; with nothing
-  addExtraPropertiesFromMemberToObject: (member, obj) =>
-    Object.keys(member).forEach (key) ->
-      val = member[key];
-      key = MdxTransform.prototype.replaceAll('_x005B_','',key);
-      key = MdxTransform.prototype.replaceAll('_x005D_','',key);
-      key = MdxTransform.prototype.replaceAll(' ','',key);                       
-      obj[key] = val;
 
 
 module.exports.MdxTransform = MdxTransform
