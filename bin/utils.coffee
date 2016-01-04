@@ -55,3 +55,179 @@ class DurationTracker
   getLongestDurations: -> @longestDurations
     
 module.exports.DurationTracker = DurationTracker
+
+class MdxTransform
+
+  replaceAll: (find, replace, str) =>
+    try
+      return str.replace(RegExp(find, 'g'), replace);
+    catch err
+      return str
+
+  convertXmlaDataToMapNested: (obj) =>
+    returnmap = []
+    cellIndex = 0
+    map = {}      
+    colAxis = obj.axes[0];
+    rowAxis = obj.axes[1];
+
+    rowAxis.positions.forEach (position) ->
+      parent = null
+      fqName = '';
+      vid = '';
+      rowAxis.hierarchies.forEach (hierarchy) ->
+        name = hierarchy.name;
+        member = position[name];
+        
+        Object.keys(member).forEach (key) ->
+          if key.indexOf('Vega') >-1
+            vid = member[key]
+
+        fqName +=  '/' + member.UName+'.['+vid+']';
+        mapv = map[fqName]
+        if ((mapv is null) or (typeof mind is "undefined"))
+          node = {};
+          node.caption = MdxTransform.prototype.replaceAll('&amp;','&',member.Caption);
+            
+          if(parent)
+            if(!parent.children)
+              parent.children = [];
+            node.p = parent.caption;
+            parent.children.push(node);
+          else 
+            returnmap[vid] = node;  
+          mapv = node;
+
+        parent = mapv;
+      
+      obj.axes[0].positions.forEach (pos) ->
+        obj.axes[0].hierarchies.forEach (hier) ->
+          name = hier.name
+          cap = MdxTransform.prototype.replaceAll(' ', '', pos[name].Caption)
+          val = obj.cells[cellIndex++].Value;
+          parent[cap] = val;
+
+    return returnmap
+
+  convertXmlaDataToMap: (obj) =>
+    cellN = 0
+    map = {}      
+    colAxis = obj.axes[0];
+    rowAxis = obj.axes[1];
+
+    rowAxis.positions.forEach (position) ->
+      parent = {}
+      rowAxis.hierarchies.forEach (hierarchy) ->
+        name = hierarchy.name;
+        member = position[name];
+        node = {}
+        node.caption = MdxTransform.prototype.replaceAll('&amp;','&',member.Caption);
+        Object.keys(member).forEach (key) ->
+          if key.indexOf('Vega') >-1
+            node.vegaId = member[key]
+
+        if(node.vegaId)
+          map[node.vegaId] = node
+          parent = map[node.vegaId];
+      
+      obj.axes[0].positions.forEach (pos) ->
+        obj.axes[0].hierarchies.forEach (hier) ->
+          name = hier.name
+          cap = MdxTransform.prototype.replaceAll(' ', '', pos[name].Caption)
+          val = obj.cells[cellN++].Value;
+          parent[cap] = val;
+
+    return map
+
+
+  convertXmlaDataToTree: (obj) =>
+    tree = [];
+    cell_Index = 0;
+    map = {};      
+    colAxis = obj.axes[0];
+    rowAxis = obj.axes[1];
+
+    rowAxis.positions.forEach (position) ->
+      parent = null
+      fqName = '';
+      vid = '';
+      rowAxis.hierarchies.forEach (hierarchy) ->
+        name = hierarchy.name;
+        member = position[name];
+        Object.keys(member).forEach (key) ->
+          if key.indexOf('Vega') >-1
+            vid = member[key]
+
+        fqName +=  '/' + member.UName+'.['+vid+']';
+        if (typeof map[fqName]) is "undefined"
+          node = {};
+          node.caption = MdxTransform.prototype.replaceAll('&amp;','&',member.Caption);
+          MdxTransform.prototype.addExtraPropertiesFromMemberToObject(member, node);
+
+          if(parent)
+            if(!parent.children)
+              parent.children = [];
+            node.p = parent.caption;
+            parent.children.push(node);
+          else 
+            tree.push(node) 
+          map[fqName] = node;
+
+        parent = map[fqName];
+
+      obj.axes[0].positions.forEach (pos) ->
+        obj.axes[0].hierarchies.forEach (hier) ->
+          name = hier.name
+          cap = MdxTransform.prototype.replaceAll(' ', '', pos[name].Caption)
+          console.log 'cell index', cell_Index;
+          val = obj.cells[cell_Index++].Value;
+          parent[cap] = val;
+             
+    #we do not want 'all' we want to see it by the parent name
+    tree.forEach (node) ->
+      MdxTransform.prototype.moveObjectPropertiesOfChildrenNamedAlltoParent(node); 
+
+    return tree
+
+
+  moveObjectPropertiesOfChildrenNamedAlltoParent: (node, parentNode) =>
+    if !node
+      return false
+ 
+    if node.children
+      node.children.forEach (childNode) ->
+        moved =  MdxTransform.prototype.moveObjectPropertiesOfChildrenNamedAlltoParent(childNode, node);
+        if moved
+          node.children.splice(0,1); 
+          #remove the 'All' child node
+
+    if node.caption is 'All'
+           #do not move all if it has more than one child
+      if(node.children)  and (node.children.length > 1)
+        return false;
+      else
+        #copy the properties to the parent
+        try
+          Object.keys(node).forEach(propName) ->
+            if propName isnt 'caption'
+              parentNode[propName] = node[propName];
+        catch e
+        return true 
+    
+    return false
+
+  #replace brackets &#x005B; and &#x005D; with nothing
+  addExtraPropertiesFromMemberToObject: (member, obj) =>
+    Object.keys(member).forEach (key) ->
+      val = member[key];
+      if (/^_x005B_/.test(key)) 
+        key = MdxTransform.prototype.replaceAll('_x005B_','',key);
+        key = MdxTransform.prototype.replaceAll('_x005D_','',key);
+        key = MdxTransform.prototype.replaceAll(' ','',key);
+        key = key.split('.').pop();
+        re = /\w*VegaId\b/gi
+        key = re.test(key) ? 'vegaId' : MdxTransform.prototype.replaceAll(' ', '',key);                         
+        obj[key] = val;
+
+
+module.exports.MdxTransform = MdxTransform
