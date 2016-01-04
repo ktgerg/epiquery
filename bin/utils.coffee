@@ -208,7 +208,7 @@ class MdxTransform
       else
         #copy the properties to the parent
         try
-          Object.keys(node).forEach(propName) ->
+          Object.keys(node).forEach (propName) ->
             if propName isnt 'caption'
               parentNode[propName] = node[propName];
         catch e
