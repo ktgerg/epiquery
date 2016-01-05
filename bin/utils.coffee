@@ -65,8 +65,8 @@ class MdxTransform
       return str
 
   convertXmlaDataToMapNested: (obj) =>
-    returnmap = []
-    cellIndex = 0
+    returnmap = {}
+    cellNum = 0
     map = {}      
     colAxis = obj.axes[0];
     rowAxis = obj.axes[1];
@@ -80,13 +80,13 @@ class MdxTransform
         member = position[name];
         
         Object.keys(member).forEach (key) ->
-          if key.indexOf('Vega') >-1
+          if key.indexOf('Vega')!=1
             vid = member[key]
 
         fqName +=  '/' + member.UName+'.['+vid+']';
-        mapv = map[fqName]
-        if ( mapv is null or (typeof map[fqName]) is "undefined")
+        if typeof(map[fqName]) is "undefined"
           node = {};
+          node.vegaId = vid
           node.caption = MdxTransform.prototype.replaceAll('&amp;','&',member.Caption);
             
           if(parent)
@@ -95,19 +95,22 @@ class MdxTransform
             node.p = parent.caption;
             parent.children.push(node);
           else 
+            #console.log 'from katie adding to main map', node.caption, node.vegaId, node.parent
             returnmap[vid] = node;  
-          mapv = node;
+          map[fqName] = node;
 
-        parent = mapv;
+        parent = map[fqName];
       
+      cellValues = {};
       obj.axes[0].positions.forEach (pos) ->
         obj.axes[0].hierarchies.forEach (hier) ->
           name = hier.name
           cap = MdxTransform.prototype.replaceAll(' ', '', pos[name].Caption)
-          val = obj.cells[cellIndex++].Value;
+          val = obj.cells[cellNum++].Value;
           parent[cap] = val;
 
     return returnmap
+
 
   convertXmlaDataToMap: (obj) =>
     cellN = 0
@@ -179,7 +182,6 @@ class MdxTransform
         obj.axes[0].hierarchies.forEach (hier) ->
           name = hier.name
           cap = MdxTransform.prototype.replaceAll(' ', '', pos[name].Caption)
-          console.log 'cell index', cell_Index;
           val = obj.cells[cell_Index++].Value;
           parent[cap] = val;
              
