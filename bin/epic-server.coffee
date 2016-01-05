@@ -450,7 +450,6 @@ exec_mdx_query = (req, template_name, template_context, callback) ->
                   if template_context.transform 
                     log.info "transforming mdx using #{template_context.transform}"
                     output = mdxTransform[template_context.transform](obj)
-                    log.info "after transforming output is something"
                   else
                     output = JSON.stringify(obj)
                callback null, output
