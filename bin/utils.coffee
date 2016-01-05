@@ -86,7 +86,7 @@ class MdxTransform
         fqName +=  '/' + member.UName+'.['+vid+']';
         if typeof(map[fqName]) is "undefined"
           node = {};
-          node.vegaId = vid
+          #node.vegaId = vid
           node.caption = MdxTransform.prototype.replaceAll('&amp;','&',member.Caption);
             
           if(parent)
